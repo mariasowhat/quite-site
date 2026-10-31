@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Викторина «Белая голубка» — День народного единства</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --blue: #1457a8; --blue-dark: #0c3976; --red: #e53935;
+    --gold: #c9a227; --green: #36a96a; --ink: #1d3557;
+  }
+  body {
+    font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 18px; color: var(--ink);
+    background:
+      radial-gradient(circle at 50% 12%, rgba(255,195,48,.52) 0 8%, transparent 25%),
+      linear-gradient(180deg, #bfe3fb 0%, #edf8ff 45%, #ffffff 72%, #ffe3df 100%);
+  }
+  .container {
+    width: 100%; max-width: 720px; min-height: 620px; position: relative;
+    overflow: hidden; padding: 38px 36px 48px; border: 5px solid #fff;
+    border-radius: 30px; background: rgba(255,255,255,.96);
+    box-shadow: 0 22px 60px rgba(20,87,168,.24);
+  }
+  .container::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 13px;
+    background: linear-gradient(90deg, #fff 0 33.33%, #2775cb 33.33% 66.66%, #e53935 66.66% 100%);
+  }
+  .container::after {
+    content: ""; position: absolute; z-index: 0; left: -10%; right: -10%;
+    bottom: -58px; height: 135px; opacity: .95; border-radius: 50% 50% 0 0;
+    background: linear-gradient(175deg, transparent 0 25%, #fff 25% 43%, #2875c9 43% 62%, #e53935 62% 100%);
+  }
+  .screen { display: none; position: relative; z-index: 1; animation: fade .45s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(12px);} to { opacity: 1; transform: translateY(0);} }
+
+  /* ---------- СТАРТ ---------- */
+  #start-screen { text-align: center; padding: 4px 8px 25px; }
+  .dove, .result-dove {
+    font-size: 80px; line-height: 1; text-align: center;
+    filter: drop-shadow(0 7px 8px rgba(20,87,168,.18));
+    animation: float 2.8s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg);} 50% { transform: translateY(-10px) rotate(2deg);} }
+  h1 {
+    max-width: 600px; margin: 12px auto 13px; color: var(--blue);
+    font-size: clamp(27px, 4vw, 36px); font-weight: 900; line-height: 1.1;
+    text-transform: uppercase; letter-spacing: .4px; text-shadow: 0 2px 0 #fff;
+  }
+  .lead { max-width: 590px; margin: 0 auto 18px; color: #3b5876; font-size: 16px; line-height: 1.55; }
+  .lead b { color: var(--red); font-size: 17px; }
+  .goal {
+    margin-bottom: 16px; padding: 15px 17px; text-align: left; color: #294665;
+    font-size: 14.5px; line-height: 1.5; border: 2px solid #cae4ff;
+    border-left: 7px solid var(--blue); border-radius: 17px;
+    background: linear-gradient(135deg, #f5faff, #e8f4ff);
+    box-shadow: 0 5px 14px rgba(20,87,168,.07);
+  }
+  .goal b { color: var(--blue-dark); }
+  .rules {
+    margin-bottom: 22px; padding: 16px 18px; text-align: left;
+    border: 2px solid #ffd8d4; border-radius: 18px;
+    background: linear-gradient(135deg, #fff9f8, #fff0ef);
+  }
+  .rules h3 { margin-bottom: 8px; color: var(--red); font-size: 17px; }
+  .rules ul { list-style: none; }
+  .rules li { padding: 4px 0; color: #3b516b; font-size: 15px; }
+
+  /* ---------- КНОПКИ ---------- */
+  .btn {
+    display: block; width: 100%; padding: 16px 20px; cursor: pointer;
+    color: #fff; font-family: inherit; font-size: 18px; font-weight: 900;
+    letter-spacing: .2px; border: none; border-radius: 18px;
+    background: linear-gradient(135deg, #2378d2, #0d478f);
+    box-shadow: 0 9px 0 #08366f, 0 15px 25px rgba(20,87,168,.28);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover { transform: translateY(-3px); box-shadow: 0 12px 0 #08366f, 0 19px 30px rgba(20,87,168,.33); }
+  .btn:active { transform: translateY(4px); box-shadow: 0 5px 0 #08366f; }
+  .btn.btn-gold {
+    background: linear-gradient(135deg, #f0c04a, #c9a227);
+    box-shadow: 0 9px 0 #8a6f14, 0 15px 25px rgba(180,140,20,.3);
+    color: #3b2c00;
+  }
+  .btn.btn-gold:hover { box-shadow: 0 12px 0 #8a6f14, 0 19px 30px rgba(180,140,20,.35); }
+  .btn.btn-ghost {
+    background: #fff; color: var(--blue);
+    border: 2px solid #cbe4ff;
+    box-shadow: 0 6px 0 #e1eefc, 0 12px 22px rgba(20,87,168,.12);
+  }
+  .btn.btn-ghost:hover { box-shadow: 0 9px 0 #e1eefc, 0 15px 26px rgba(20,87,168,.18); }
+  .btn + .btn { margin-top: 12px; }
+
+  /* ---------- ЭКРАН ВОПРОСОВ ---------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin-bottom: 12px; font-size: 15px; font-weight: 900;
+  }
+  .timer, .score, .qtimer {
+    padding: 8px 12px; border-radius: 12px; white-space: nowrap;
+    border: 2px solid #cbe4ff; background: #f0f7ff; color: var(--blue-dark);
+  }
+  .score { color: #975900; border-color: #ffe0a3; background: #fff8df; }
+  .qtimer { color: #1d7a4c; border-color: #c9f0d8; background: #ecfbf2; transition: all .2s ease; }
+  .qtimer.warn { color: #a06a00; border-color: #ffe0a3; background: #fff8df; }
+  .qtimer.danger { color: #b92727; border-color: #ffc2bd; background: #fff0ef; animation: pulse .8s infinite; }
+  .timer.danger { color: #b92727; border-color: #ffc2bd; background: #fff0ef; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { transform: scale(1.05); opacity: .75; } }
+
+  .mute-btn {
+    flex: 0 0 36px; width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid #cbe4ff; background: #f0f7ff; cursor: pointer;
+    font-size: 16px; line-height: 1; display: flex; align-items: center;
+    justify-content: center; transition: all .15s ease; font-family: inherit;
+  }
+  .mute-btn:hover { background: #e0efff; transform: scale(1.06); }
+  .mute-btn.muted { background: #fff0ef; border-color: #ffc2bd; }
+
+  .progress { height: 11px; overflow: hidden; margin-bottom: 8px; border-radius: 99px; background: #e6eff8; }
+  .progress > div { width: 0; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--blue), #4ba2e8, var(--red)); transition: width .35s ease; }
+  .qprogress { height: 7px; overflow: hidden; margin-bottom: 20px; border-radius: 99px; background: #eef4f8; }
+  .qprogress > div {
+    width: 100%; height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, #36a96a, #7ed6a5);
+    transition: width 1s linear, background .3s ease;
+  }
+  .qprogress > div.warn { background: linear-gradient(90deg, #f0c04a, #ffdd8a); }
+  .qprogress > div.danger { background: linear-gradient(90deg, #e53935, #ff8a80); }
+
+  .section-label {
+    display: inline-block; margin-bottom: 10px; padding: 6px 13px;
+    color: var(--blue); font-size: 13.5px; font-weight: 900;
+    border: 1px solid #cbe2fb; border-radius: 99px; background: #e8f3ff;
+  }
+  .question-counter { margin-bottom: 10px; color: #71839a; font-size: 13px; font-weight: 700; }
+  .question { margin-bottom: 19px; color: var(--blue-dark); font-size: 23px; font-weight: 900; line-height: 1.32; }
+
+  .options { display: flex; flex-direction: column; gap: 11px; }
+  .option {
+    display: flex; align-items: center; gap: 13px; width: 100%;
+    padding: 13px 16px; cursor: pointer; text-align: left; color: #29425f;
+    font-family: inherit; font-size: 16px; font-weight: 700;
+    border: 2px solid #d9e8f7; border-radius: 16px;
+    background: linear-gradient(135deg, #f9fcff, #edf6ff);
+    transition: all .16s ease;
+  }
+  .option:hover { transform: translateX(5px); border-color: #4c98df; background: #e8f3ff; }
+  .option .letter {
+    display: flex; flex: 0 0 32px; align-items: center; justify-content: center;
+    width: 32px; height: 32px; color: #fff; font-size: 14px; font-weight: 900;
+    border-radius: 10px; background: linear-gradient(135deg, #2b7fd4, #1457a8);
+  }
+  .option.correct { border-color: #52b97d; background: #eaf9ef; }
+  .option.correct .letter { background: var(--green); }
+  .option.wrong { border-color: #ed716b; background: #fff0ef; }
+  .option.wrong .letter { background: var(--red); }
+  .option:disabled { cursor: default; }
+
+  .feedback { min-height: 24px; margin-top: 16px; text-align: center; font-size: 16px; font-weight: 900; }
+  .feedback.ok { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+  .feedback.timeout { color: #a06a00; }
+
+  /* ---------- РЕЗУЛЬТАТЫ ---------- */
+  #results-screen { padding: 12px 8px 28px; text-align: center; }
+  .result-title { margin: 10px 0 7px; color: var(--blue); font-size: 29px; font-weight: 900; }
+  .result-msg { max-width: 530px; margin: 0 auto 20px; color: #48627e; font-size: 16px; line-height: 1.55; }
+  .result-box { display: flex; gap: 14px; margin-bottom: 22px; }
+  .result-item { flex: 1; padding: 17px 10px; border: 2px solid #d3e7fb; border-radius: 18px; background: linear-gradient(135deg, #f6fbff, #e9f4ff); }
+  .result-item:nth-child(2) { border-color: #ffd5d1; background: linear-gradient(135deg, #fff9f8, #fff0ef); }
+  .result-item .num { color: var(--blue); font-size: 30px; font-weight: 900; }
+  .result-item:nth-child(2) .num { color: var(--red); }
+  .result-item .cap { margin-top: 4px; color: #71839a; font-size: 13px; font-weight: 700; }
+
+  /* ---------- СЕРТИФИКАТ ---------- */
+  #certificate-screen { padding: 6px 6px 24px; text-align: center; }
+  .cert-heading { color: var(--blue-dark); font-size: 24px; font-weight: 900; margin-bottom: 6px; }
+  .cert-hint { color: #71839a; font-size: 14px; margin-bottom: 16px; }
+  .cert-input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .cert-input-row input {
+    flex: 1; padding: 13px 16px; font-family: inherit; font-size: 16px; font-weight: 700;
+    color: var(--ink); border: 2px solid #cbe4ff; border-radius: 14px; background: #f5faff; outline: none;
+    transition: all .15s ease;
+  }
+  .cert-input-row input:focus { border-color: #4c98df; background: #fff; box-shadow: 0 0 0 4px rgba(76,152,223,.15); }
+  .cert-input-row .btn { width: auto; padding: 13px 20px; font-size: 15px; }
+
+  .certificate-sheet {
+    position: relative; overflow: hidden; margin: 4px 0 18px; padding: 30px 26px 26px;
+    text-align: center; border: 3px double var(--gold); border-radius: 20px;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,215,120,.18) 0 30%, transparent 60%),
+      linear-gradient(135deg, #fffdf6, #fef7e8, #fffaf0);
+    box-shadow: 0 15px 40px rgba(180,140,20,.22);
+  }
+  .certificate-sheet::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 9px;
+    background: linear-gradient(90deg, #fff 0 33.33%, #2775cb 33.33% 66.66%, #e53935 66.66% 100%);
+  }
+  .certificate-sheet::after {
+    content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 9px;
+    background: linear-gradient(90deg, #e53935 0 33.33%, #2775cb 33.33% 66.66%, #fff 66.66% 100%);
+  }
+  .cert-seal {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 66px; height: 66px; margin: 4px auto 8px;
+    border-radius: 50%; font-size: 34px;
+    background: radial-gradient(circle, #fff6d8, #ffe08a);
+    border: 3px solid var(--gold);
+    box-shadow: 0 6px 16px rgba(201,162,39,.35);
+  }
+  .cert-title { color: var(--gold); font-size: 12px; font-weight: 900; letter-spacing: 5px; margin-bottom: 6px; }
+  .cert-main { color: var(--blue-dark); font-size: 30px; font-weight: 900; letter-spacing: 2px; margin-bottom: 12px; }
+  .cert-subtitle { color: #71839a; font-size: 13px; margin-bottom: 4px; }
+  .cert-name {
+    display: inline-block; min-width: 60%; padding: 4px 18px 8px; margin-bottom: 12px;
+    color: var(--red); font-size: 26px; font-weight: 900; font-style: italic;
+    border-bottom: 2px dashed #d8bd63;
+  }
+  .cert-text { color: #4a4232; font-size: 15px; line-height: 1.6; margin-bottom: 16px; }
+  .cert-text b { color: var(--blue-dark); }
+  .cert-text b.score { color: var(--red); font-size: 17px; }
+  .cert-footer {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding-top: 14px; border-top: 1px dashed #d8bd63; color: #6b5d3a; font-size: 13px; font-weight: 700;
+  }
+  .cert-sign { text-align: center; }
+  .cert-sign .who { font-size: 15px; font-weight: 900; color: var(--blue); }
+  .cert-sign .lbl { font-size: 11px; color: #a89a74; }
+
+  @media (max-width: 560px) {
+    body { padding: 8px; }
+    .container { min-height: 100vh; padding: 31px 19px 42px; border-radius: 22px; }
+    h1 { font-size: 26px; }
+    .lead { font-size: 15px; }
+    .question { font-size: 20px; }
+    .option { font-size: 15px; }
+    .result-box { gap: 8px; }
+    .topbar { font-size: 12.5px; gap: 5px; }
+    .timer, .score, .qtimer { padding: 6px 8px; border-width: 1.5px; }
+    .mute-btn { flex-basis: 32px; width: 32px; height: 32px; font-size: 14px; }
+    .cert-input-row { flex-direction: column; }
+    .cert-input-row .btn { width: 100%; }
+    .cert-main { font-size: 24px; }
+    .cert-name { font-size: 21px; }
+    .cert-footer { flex-direction: column; }
+  }
+
+  /* ---------- ПЕЧАТЬ СЕРТИФИКАТА ---------- */
+  @media print {
+    body {
+      background: #fff !important; padding: 0 !important; display: block !important;
+      min-height: auto !important;
+    }
+    body > .container {
+      box-shadow: none !important; border: none !important; padding: 0 !important;
+      max-width: none !important; min-height: 0 !important;
+      background: #fff !important; border-radius: 0 !important;
+    }
+    .container::before, .container::after { display: none !important; }
+    .screen { display: none !important; }
+    #certificate-screen { display: block !important; }
+    #certificate-screen .no-print { display: none !important; }
+    .certificate-sheet {
+      box-shadow: none !important; page-break-inside: avoid;
+      margin: 0 auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- СТАРТ -->
+  <div id="start-screen" class="screen active">
+    <div class="dove">🕊️</div>
+    <h1>Белая голубка<br>и День народного единства</h1>
+    <p class="lead">
+      <b>Мы разные, но вместе мы сильнее!</b><br>
+      Отправляйся в путешествие с Белой голубкой и проверь свои знания о России, дружбе и единстве.
+    </p>
+    <div class="goal">
+      <b>Цель викторины:</b> узнать и закрепить, почему мы празднуем День народного единства, какие у России символы, сколько народов живёт в нашей стране и что помогает людям жить в мире и согласии.
+    </div>
+    <div class="rules">
+      <h3>Правила игры</h3>
+      <ul>
+        <li>📚 5 разделов, 12 вопросов (вопросы перемешиваются!)</li>
+        <li>✅ За правильный ответ — <b>10 очков</b></li>
+        <li>❌ За неправильный — очки <b>не вычитаются</b></li>
+        <li>⏳ На каждый вопрос — <b>30 секунд</b></li>
+        <li>⏱️ На всю викторину — <b>20 минут</b></li>
+        <li>🏅 В конце — <b>сертификат участника</b></li>
+      </ul>
+    </div>
+    <button class="btn" onclick="startQuiz()">Начать викторину ▶</button>
+  </div>
+
+  <!-- ВОПРОСЫ -->
+  <div id="quiz-screen" class="screen">
+    <div class="topbar">
+      <div class="timer" id="timer-box">⏱️ <span id="timer">20:00</span></div>
+      <div class="score">⭐ <span id="score">0</span></div>
+      <div class="qtimer" id="qtimer-box">⏳ <span id="qtimer">30</span></div>
+      <button class="mute-btn" id="mute-btn" type="button" onclick="toggleSound()" title="Звук">🔊</button>
+    </div>
+    <div class="progress"><div id="progress-bar"></div></div>
+    <div class="qprogress"><div id="q-progress-bar"></div></div>
+
+    <span class="section-label" id="section-label"></span>
+    <div class="question-counter" id="counter"></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- РЕЗУЛЬТАТЫ -->
+  <div id="results-screen" class="screen">
+    <div class="result-dove" id="result-emoji">🕊️</div>
+    <div class="result-title" id="result-title">Готово!</div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="result-box">
+      <div class="result-item">
+        <div class="num" id="final-score">0</div>
+        <div class="cap">очков набрано</div>
+      </div>
+      <div class="result-item">
+        <div class="num" id="final-time">0:00</div>
+        <div class="cap">время в игре</div>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="openCertificate()">🎖️ Получить сертификат</button>
+    <button class="btn btn-ghost" onclick="startQuiz()">Пройти ещё раз 🔄</button>
+  </div>
+
+  <!-- СЕРТИФИКАТ -->
+  <div id="certificate-screen" class="screen">
+    <h2 class="cert-heading">Сертификат участника</h2>
+    <p class="cert-hint">Введите имя и фамилию — сертификат обновится сразу. Затем нажмите «Распечатать».</p>
+    <div class="cert-input-row no-print">
+      <input id="cert-input" type="text" maxlength="30" placeholder="Например: Иванов Иван" autocomplete="off">
+      <button class="btn" type="button" onclick="window.print()">🖨️ Распечатать</button>
+    </div>
+
+    <div class="certificate-sheet" id="certificate-sheet">
+      <div class="cert-seal">🕊️</div>
+      <div class="cert-title">СЕРТИФИКАТ</div>
+      <div class="cert-main">УЧАСТНИКА</div>
+      <div class="cert-subtitle">настоящим подтверждается, что</div>
+      <div class="cert-name" id="cert-name">Имя ученика</div>
+      <div class="cert-text">
+        успешно прошёл(ла) викторину<br>
+        <b>«Белая голубка и День народного единства»</b><br>
+        и набрал(а) <b class="score" id="cert-score">0</b> очков из 120
+      </div>
+      <div class="cert-footer">
+        <div>Дата: <span id="cert-date">—</span></div>
+        <div class="cert-sign">
+          <div class="who">🕊️ Белая голубка</div>
+          <div class="lbl">символ мира и дружбы</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="no-print">
+      <button class="btn btn-ghost" onclick="backToResults()">← Назад к результатам</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ================== ДАННЫЕ ================== */
+const SECTIONS = [
+  { icon: "📜", name: "История праздника" },
+  { icon: "🏛️", name: "Символы России" },
+  { icon: "🤝", name: "Народы и традиции" },
+  { icon: "🏙️", name: "Города России" },
+  { icon: "💡", name: "Смекалка голубки" }
+];
+
+const BASE_QUESTIONS = [
+  { s: 0, q: "Когда в России отмечают День народного единства?",
+    o: ["1 января", "4 ноября", "9 мая", "12 июня"], a: 1 },
+  { s: 0, q: "В честь какого события учреждён этот праздник?",
+    o: ["Освобождение Москвы народным ополчением в 1612 году",
+        "Победа в Отечественной войне 1812 года",
+        "Первый полёт человека в космос",
+        "Основание Санкт-Петербурга"], a: 0 },
+  { s: 0, q: "Кто возглавил народное ополчение 1612 года?",
+    o: ["Иван Грозный и Пётр I",
+        "Кузьма Минин и Дмитрий Пожарский",
+        "Юрий Гагарин и Сергей Королёв",
+        "Александр Пушкин и Михаил Лермонтов"], a: 1 },
+  { s: 1, q: "Что изображено на гербе России?",
+    o: ["Медведь", "Двуглавый орёл", "Белая голубка", "Пятиконечная звезда"], a: 1 },
+  { s: 1, q: "Сколько цветов на флаге России?",
+    o: ["Два", "Три", "Четыре", "Пять"], a: 1 },
+  { s: 1, q: "Какой цвет НЕ входит в российский флаг?",
+    o: ["Белый", "Синий", "Красный", "Зелёный"], a: 3 },
+  { s: 2, q: "Сколько народов живёт в России?",
+    o: ["Около 10", "Более 190", "Ровно 50", "Только 3"], a: 1 },
+  { s: 2, q: "Как называется праздник проводов зимы и встречи весны?",
+    o: ["Масленица", "День космонавтики", "Новый год", "День Победы"], a: 0 },
+  { s: 3, q: "Какой город является столицей России?",
+    o: ["Санкт-Петербург", "Казань", "Москва", "Новосибирск"], a: 2 },
+  { s: 3, q: "Памятник Минину и Пожарскому стоит в Москве на…",
+    o: ["Красной площади", "Воробьёвых горах", "Арбате", "Тверской улице"], a: 0 },
+  { s: 4, q: "Что символизирует белая голубка?",
+    o: ["Войну", "Мир и доброту", "Скорость", "Богатство"], a: 1 },
+  { s: 4, q: "Как называется главный закон нашей страны?",
+    o: ["Конституция", "Учебник", "Указ", "Гимн"], a: 0 }
+];
+
+const MAX_TIME = 20 * 60;
+const QUESTION_TIME = 30;
+const LETTERS = ["А", "Б", "В", "Г"];
+const MAX_SCORE = BASE_QUESTIONS.length * 10;
+
+let state = null;
+let audioCtx = null;
+let soundOn = true;
+
+const $ = id => document.getElementById(id);
+
+/* ================== ЗВУК ================== */
+function ensureAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch (e) { audioCtx = null; }
+}
+function tone(freq, dur, type, vol, delay) {
+  if (!soundOn) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  try {
+    const t = audioCtx.currentTime + (delay || 0);
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.07, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  } catch (e) {}
+}
+function sndCorrect() { tone(660,0.12,"sine",0.09,0); tone(880,0.16,"sine",0.09,0.1); tone(1100,0.2,"sine",0.08,0.22); }
+function sndWrong()   { tone(220,0.18,"triangle",0.07,0); tone(165,0.26,"triangle",0.06,0.12); }
+function sndTick()    { tone(880,0.05,"square",0.03,0); }
+function sndTimeUp()  { tone(330,0.14,"square",0.06,0); tone(247,0.22,"square",0.06,0.14); }
+function sndFinish()  { tone(523,0.14,"sine",0.08,0); tone(659,0.14,"sine",0.08,0.14); tone(784,0.14,"sine",0.08,0.28); tone(1047,0.32,"sine",0.08,0.42); }
+
+function toggleSound() {
+  soundOn = !soundOn;
+  const b = $("mute-btn");
+  b.textContent = soundOn ? "🔊" : "🔇";
+  b.classList.toggle("muted", !soundOn);
+  if (soundOn) tone(880, 0.08, "sine", 0.06, 0);
+}
+
+/* ================== УТИЛИТЫ ================== */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildShuffledQuestions() {
+  // группируем по разделам
+  const groups = {};
+  BASE_QUESTIONS.forEach(q => {
+    (groups[q.s] = groups[q.s] || []).push(q);
+  });
+  // перемешиваем порядок разделов и вопросы внутри разделов
+  const sectionOrder = shuffle(Object.keys(groups).map(Number));
+  const result = [];
+  sectionOrder.forEach(sIdx => {
+    shuffle(groups[sIdx]).forEach(q => result.push(prepareQuestion(q)));
+  });
+  return result;
+}
+
+function prepareQuestion(q) {
+  // перемешиваем варианты ответов, корректно обновляя индекс правильного
+  const pairs = q.o.map((text, i) => ({ text, correct: i === q.a }));
+  const shuffled = shuffle(pairs);
+  return {
+    s: q.s,
+    q: q.q,
+    o: shuffled.map(p => p.text),
+    a: shuffled.findIndex(p => p.correct)
+  };
+}
+
+/* ================== ЭКРАНЫ ================== */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+/* ================== ИГРА ================== */
+function startQuiz() {
+  ensureAudio();
+  state = {
+    questions: buildShuffledQuestions(),
+    current: 0,
+    score: 0,
+    timeLeft: MAX_TIME,
+    qTimeLeft: QUESTION_TIME,
+    locked: false,
+    finished: false,
+    timerId: null
+  };
+  $("score").textContent = "0";
+  $("timer").textContent = "20:00";
+  $("timer-box").classList.remove("danger");
+  updateQuestionTimer();
+  showScreen("quiz-screen");
+  clearInterval(state.timerId);
+  state.timerId = setInterval(tick, 1000);
+  renderQuestion();
+}
+
+function tick() {
+  if (!state || state.finished) return;
+
+  // Общий таймер
+  state.timeLeft--;
+  updateTimerDisplay();
+  if (state.timeLeft <= 0) { finishQuiz(); return; }
+
+  // Таймер вопроса (не идёт во время показа обратной связи)
+  if (!state.locked) {
+    state.qTimeLeft--;
+    updateQuestionTimer();
+    if (state.qTimeLeft <= 5 && state.qTimeLeft > 0) sndTick();
+    if (state.qTimeLeft <= 0) timeoutQuestion();
+  }
+}
+
+function updateTimerDisplay() {
+  const t = Math.max(state.timeLeft, 0);
+  const m = Math.floor(t / 60);
+  const s = t % 60;
+  $("timer").textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  $("timer-box").classList.toggle("danger", t <= 60);
+}
+
+function updateQuestionTimer() {
+  const t = Math.max(state.qTimeLeft, 0);
+  $("qtimer").textContent = t;
+  const box = $("qtimer-box");
+  box.classList.remove("warn", "danger");
+  if (t <= 5) box.classList.add("danger");
+  else if (t <= 10) box.classList.add("warn");
+
+  const pct = (t / QUESTION_TIME) * 100;
+  const bar = $("q-progress-bar");
+  bar.style.width = pct + "%";
+  bar.classList.remove("warn", "danger");
+  if (t <= 5) bar.classList.add("danger");
+  else if (t <= 10) bar.classList.add("warn");
+}
+
+function renderQuestion() {
+  if (!state || state.finished) return;
+  if (state.current >= state.questions.length) { finishQuiz(); return; }
+
+  const q = state.questions[state.current];
+  const sec = SECTIONS[q.s];
+
+  $("section-label").textContent = sec.icon + " " + sec.name;
+  $("counter").textContent = "Вопрос " + (state.current + 1) + " из " + state.questions.length;
+  $("progress-bar").style.width = (state.current / state.questions.length * 100) + "%";
+  $("question").textContent = q.q;
+  $("feedback").textContent = "";
+  $("feedback").className = "feedback";
+
+  state.locked = false;
+  state.qTimeLeft = QUESTION_TIME;
+  updateQuestionTimer();
+
+  const box = $("options");
+  box.innerHTML = "";
+  q.o.forEach((text, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "option";
+    btn.innerHTML = '<span class="letter">' + LETTERS[i] + '</span><span>' + text + '</span>';
+    btn.addEventListener("click", () => chooseAnswer(i, btn));
+    box.appendChild(btn);
+  });
+}
+
+function disableOptions() {
+  document.querySelectorAll("#options .option").forEach(b => { b.disabled = true; });
+}
+
+function chooseAnswer(index, btn) {
+  if (!state || state.locked || state.finished) return;
+  state.locked = true;
+  disableOptions();
+
+  const q = state.questions[state.current];
+  const isCorrect = index === q.a;
+
+  if (isCorrect) {
+    state.score += 10;
+    $("score").textContent = state.score;
+    btn.classList.add("correct");
+    $("feedback").textContent = "✔ Верно! +10 очков";
+    $("feedback").className = "feedback ok";
+    sndCorrect();
+  } else {
+    btn.classList.add("wrong");
+    $("feedback").textContent = "✖ Не угадал. Не беда — летим дальше!";
+    $("feedback").className = "feedback bad";
+    sndWrong();
+  }
+
+  $("progress-bar").style.width = ((state.current + 1) / state.questions.length * 100) + "%";
+
+  setTimeout(() => {
+    if (!state || state.finished) return;
+    state.current++;
+    if (state.current >= state.questions.length) finishQuiz();
+    else renderQuestion();
+  }, 1100);
+}
+
+function timeoutQuestion() {
+  if (!state || state.locked || state.finished) return;
+  state.locked = true;
+  disableOptions();
+  sndTimeUp();
+  $("feedback").textContent = "⏳ Время вышло! Летим к следующему вопросу…";
+  $("feedback").className = "feedback timeout";
+  $("progress-bar").style.width = ((state.current + 1) / state.questions.length * 100) + "%";
+
+  setTimeout(() => {
+    if (!state || state.finished) return;
+    state.current++;
+    if (state.current >= state.questions.length) finishQuiz();
+    else renderQuestion();
+  }, 1400);
+}
+
+function finishQuiz() {
+  if (!state || state.finished) return;
+  state.finished = true;
+  clearInterval(state.timerId);
+  sndFinish();
+
+  const used = MAX_TIME - Math.max(state.timeLeft, 0);
+  const um = Math.floor(used / 60);
+  const us = used % 60;
+
+  $("final-score").textContent = state.score;
+  $("final-time").textContent = um + ":" + String(us).padStart(2, "0");
+
+  let emoji, title, msg;
+  if (state.score >= 100) {
+    emoji = "🏆"; title = "Великолепно!";
+    msg = "Ты настоящий знаток нашей страны! Голубка гордится тобой — ты знаешь, как важно жить в мире и согласии.";
+  } else if (state.score >= 70) {
+    emoji = "🌟"; title = "Отлично!";
+    msg = "Очень хороший результат! Ты много знаешь о России и её народах. Продолжай узнавать новое!";
+  } else if (state.score >= 40) {
+    emoji = "👍"; title = "Хорошо!";
+    msg = "Неплохо получилось! Немного потренируйся — почитай о Дне народного единства и попробуй ещё раз.";
+  } else {
+    emoji = "🕊️"; title = "Молодец, что попробовал!";
+    msg = "Не расстраивайся! Узнай больше о празднике, символах и народах России — и обязательно сыграй снова.";
+  }
+
+  $("result-emoji").textContent = emoji;
+  $("result-title").textContent = title;
+  $("result-msg").textContent = msg;
+  showScreen("results-screen");
+}
+
+/* ================== СЕРТИФИКАТ ================== */
+function todayString() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return dd + "." + mm + "." + d.getFullYear();
+}
+
+function openCertificate() {
+  const score = state ? state.score : 0;
+  $("cert-score").textContent = score;
+  $("cert-date").textContent = todayString();
+  $("cert-name").textContent = "Имя ученика";
+  $("cert-input").value = "";
+  showScreen("certificate-screen");
+  setTimeout(() => { try { $("cert-input").focus(); } catch (e) {} }, 120);
+}
+
+function backToResults() {
+  showScreen("results-screen");
+}
+
+/* ================== ИНИЦИАЛИЗАЦИЯ ================== */
+document.addEventListener("DOMContentLoaded", () => {
+  $("cert-date").textContent = todayString();
+
+  $("cert-input").addEventListener("input", e => {
+    const v = e.target.value.trim();
+    $("cert-name").textContent = v || "Имя ученика";
+  });
+
+  // Разблокировка аудио по первому клику/касанию
+  document.addEventListener("click", ensureAudio, { once: true });
+});
+</script>
+</body>
+</html>
